@@ -1,0 +1,28 @@
+plugins {
+    id 'java'
+    id 'war'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    implementation 'javax.servlet:javax.servlet-api:4.0.1'
+    implementation 'org.apache.tomcat:tomcat-servlet-api:9.0.54'
+    testImplementation 'org.mockito:mockito-core:3.9.0'
+    testImplementation 'org.springframework:spring-test:5.3.9'
+    implementation 'org.springframework:spring-web:5.3.10'
+    testImplementation 'org.springframework:spring-test:5.3.10'
+    implementation 'org.thymeleaf:thymeleaf:3.0.12.RELEASE'
+    implementation 'org.thymeleaf:thymeleaf-spring5:3.0.12.RELEASE'
+}
+
+test {
+    useJUnitPlatform()
+}
