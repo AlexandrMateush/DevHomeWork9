@@ -13,6 +13,8 @@ import javax.servlet.http.HttpFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import static org.example.TimezoneValidator.validateTimezone;
+
 
 @WebFilter("/time")
 public class TimezoneValidateFilter extends HttpFilter {
@@ -25,17 +27,18 @@ public class TimezoneValidateFilter extends HttpFilter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
-        String timezone = request.getParameter("timezone");
-        boolean isValid = isValidTimezone(timezone);
-        if (!isValid) {
-            response.getWriter().write("Invalid timezone");
-            response.setCharacterEncoding("UTF-8");
-            HttpServletResponse httpResponse = (HttpServletResponse) response;
-            httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid timezone");
-        } else {
-            createTimezoneCookie((HttpServletRequest) request, (HttpServletResponse) response, timezone);
-            chain.doFilter(request, response);
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        HttpServletResponse httpResponse = (HttpServletResponse) response;
+
+        String timezoneParam = request.getParameter("timezone");
+        if (timezoneParam != null) {
+            String validatedTimezone = validateTimezone(timezoneParam);
+            if (validatedTimezone != null) {
+                httpRequest.setAttribute("timezone", validatedTimezone);
+            }
         }
+
+        chain.doFilter(request, response);
     }
     private void createTimezoneCookie(HttpServletRequest request, HttpServletResponse response, String timezone) {
         Cookie timezoneCookie = new Cookie("lastTimezone", timezone);

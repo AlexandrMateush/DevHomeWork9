@@ -15,9 +15,12 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import static org.example.TimezoneValidator.validateTimezone;
+
 @WebServlet("/time")
 public class TimeServlet extends HttpServlet {
     private TemplateEngine templateEngine;
+
     private static final String TIMEZONE_COOKIE_NAME = "lastTimezone";
     @Override
     public void init() throws ServletException {
@@ -29,34 +32,48 @@ public class TimeServlet extends HttpServlet {
         templateEngine = new TemplateEngine();
         templateEngine.setTemplateResolver(templateResolver);
     }
-
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        response.setContentType("text/html");
-        response.setCharacterEncoding("UTF-8");
-
-        String timezoneParam = request.getParameter("timezone");
-        TimeZone timezone = parseTimeZone(timezoneParam);
-
-        response.addCookie(createTimezoneCookie(timezone.getID()));
-
-        Date currentDate = new Date();
-        String currentTime = convertToTimeZoneFormat(currentDate, timezone);
-
-        WebContext webContext = new WebContext(request, response, getServletContext());
-        webContext.setVariable("timezone", timezone.getID());
-        webContext.setVariable("currentTime", currentTime);
-
-
-        templateEngine.process("time", webContext, response.getWriter());
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        processRequest(request, response);
     }
 
-    public Cookie createTimezoneCookie(String timezone) {
-        Cookie cookie = new Cookie(TIMEZONE_COOKIE_NAME, timezone);
-        cookie.setMaxAge(365 * 24 * 60 * 60); // 1 year
-        cookie.setPath("/");
-        return cookie;
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        processRequest(request, response);
+    }
+
+
+    private void createTimezoneCookie(HttpServletRequest request, HttpServletResponse response, String timezone) {
+        Cookie timezoneCookie = new Cookie("lastTimezone", timezone);
+        timezoneCookie.setPath(request.getContextPath());
+        response.addCookie(timezoneCookie);
+    }
+    private boolean validateTimezone(String timezone) {
+        return TimeZone.getTimeZone(timezone) != null;
+    }
+    private void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String timezone = request.getParameter("timezone");
+
+        if (timezone != null && !timezone.isEmpty()) {
+            if (validateTimezone(timezone)) {
+                createTimezoneCookie(request, response, timezone);
+            } else {
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid timezone");
+            }
+        }
+
+    }
+
+    private String getLastTimezoneFromCookie(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("lastTimezone".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
     }
 
     private TimeZone parseTimeZone(String timezoneParam) {
