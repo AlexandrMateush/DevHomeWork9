@@ -26,7 +26,7 @@ public class TimeServlet extends HttpServlet {
     public void init() throws ServletException {
         ServletContextTemplateResolver templateResolver = new ServletContextTemplateResolver(getServletContext());
         templateResolver.setTemplateMode(TemplateMode.HTML);
-        templateResolver.setPrefix("/WEB-INF/templates/");
+        templateResolver.setPrefix("/templates/");
         templateResolver.setSuffix(".html");
 
         templateEngine = new TemplateEngine();
@@ -40,6 +40,16 @@ public class TimeServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         processRequest(request, response);
+        Date currentDate = new Date();
+        String timezoneParam = request.getParameter("timezone");
+        TimeZone timezone = parseTimeZone(timezoneParam);
+        String currentTime = convertToTimeZoneFormat(currentDate, timezone);
+
+        response.getWriter().println("<html><body>");
+        response.getWriter().println("<h1>Поточний час (" + timezone.getID() + ")</h1>");
+        response.getWriter().println("<p>" + currentTime + "</p>");
+        response.getWriter().println("</body></html>");
+
     }
 
 
@@ -61,7 +71,6 @@ public class TimeServlet extends HttpServlet {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid timezone");
             }
         }
-
     }
 
     private String getLastTimezoneFromCookie(HttpServletRequest request) {
