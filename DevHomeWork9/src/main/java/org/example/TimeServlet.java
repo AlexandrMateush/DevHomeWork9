@@ -15,18 +15,15 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import static org.example.TimezoneValidator.validateTimezone;
-
 @WebServlet("/time")
 public class TimeServlet extends HttpServlet {
     private TemplateEngine templateEngine;
 
-    private static final String TIMEZONE_COOKIE_NAME = "lastTimezone";
     @Override
     public void init() throws ServletException {
         ServletContextTemplateResolver templateResolver = new ServletContextTemplateResolver(getServletContext());
         templateResolver.setTemplateMode(TemplateMode.HTML);
-        templateResolver.setPrefix("/templates/");
+        templateResolver.setPrefix("/webapp/WEB-INF/templates/");
         templateResolver.setSuffix(".html");
 
         templateEngine = new TemplateEngine();
@@ -51,8 +48,7 @@ public class TimeServlet extends HttpServlet {
         response.getWriter().println("</body></html>");
 
     }
-
-
+    
     private void createTimezoneCookie(HttpServletRequest request, HttpServletResponse response, String timezone) {
         Cookie timezoneCookie = new Cookie("lastTimezone", timezone);
         timezoneCookie.setPath(request.getContextPath());
@@ -61,7 +57,7 @@ public class TimeServlet extends HttpServlet {
     private boolean validateTimezone(String timezone) {
         return TimeZone.getTimeZone(timezone) != null;
     }
-    private void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String timezone = request.getParameter("timezone");
 
         if (timezone != null && !timezone.isEmpty()) {
@@ -69,10 +65,29 @@ public class TimeServlet extends HttpServlet {
                 createTimezoneCookie(request, response, timezone);
             } else {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid timezone");
+                return;
             }
         }
-    }
 
+        String lastTimezone = getLastTimezoneFromCookie(request);
+        if (lastTimezone != null) {
+            String currentTimeFormatted = getCurrentTimeFormatted(lastTimezone);
+
+            WebContext context = new WebContext(request, response, getServletContext(), request.getLocale());
+            context.setVariable("timezone", lastTimezone);
+            context.setVariable("currentTime", currentTimeFormatted);
+
+            templateEngine.process("time_template", context, response.getWriter());
+        }
+    }
+    private String getCurrentTimeFormatted(String timezone) {
+        TimeZone selectedTimeZone = TimeZone.getTimeZone(timezone);
+        Date currentTime = new Date();
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+        sdf.setTimeZone(selectedTimeZone);
+        return sdf.format(currentTime);
+    }
     private String getLastTimezoneFromCookie(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {

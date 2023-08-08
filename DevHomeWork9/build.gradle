@@ -22,6 +22,8 @@ dependencies {
     testImplementation 'org.springframework:spring-test:5.3.10'
     implementation 'org.thymeleaf:thymeleaf:3.0.12.RELEASE'
     implementation 'org.thymeleaf:thymeleaf-spring5:3.0.12.RELEASE'
+    testImplementation 'org.slf4j:slf4j-api:1.7.32'
+    testImplementation 'ch.qos.logback:logback-classic:1.2.6'
 }
 
 test {

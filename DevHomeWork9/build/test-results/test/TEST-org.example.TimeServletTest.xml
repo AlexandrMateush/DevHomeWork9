@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.example.TimeServletTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2023-08-08T19:31:58" hostname="DESKTOP-DEB41DV" time="0.461">
+  <properties/>
+  <testcase name="testProcessRequestWithNoTimezone()" classname="org.example.TimeServletTest" time="0.454"/>
+  <testcase name="testProcessRequestWithCookieTimezone()" classname="org.example.TimeServletTest" time="0.002"/>
+  <testcase name="testProcessRequestWithSavedTimezone()" classname="org.example.TimeServletTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
