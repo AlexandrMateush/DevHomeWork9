@@ -2,12 +2,17 @@ package org.example;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.WebContext;
 import org.thymeleaf.templatemode.TemplateMode;
+import org.thymeleaf.templateresolver.FileTemplateResolver;
 import org.thymeleaf.templateresolver.ServletContextTemplateResolver;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Optional;
 import java.util.TimeZone;
+import javax.servlet.Filter;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.Cookie;
@@ -21,12 +26,12 @@ public class TimeServlet extends HttpServlet {
 
     @Override
     public void init() throws ServletException {
-        ServletContextTemplateResolver templateResolver = new ServletContextTemplateResolver(getServletContext());
-        templateResolver.setTemplateMode(TemplateMode.HTML);
-        templateResolver.setPrefix("/webapp/WEB-INF/templates/");
-        templateResolver.setSuffix(".html");
-
         templateEngine = new TemplateEngine();
+        FileTemplateResolver templateResolver = new FileTemplateResolver();
+        templateResolver.setTemplateMode(TemplateMode.HTML);
+        templateResolver.setPrefix(getClass().getClassLoader().getResource("templates").getPath());
+        templateResolver.setSuffix(".html");
+        templateResolver.setOrder(templateEngine.getTemplateResolvers().size());
         templateEngine.setTemplateResolver(templateResolver);
     }
     @Override
@@ -37,28 +42,17 @@ public class TimeServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         processRequest(request, response);
-        Date currentDate = new Date();
-        String timezoneParam = request.getParameter("timezone");
-        TimeZone timezone = parseTimeZone(timezoneParam);
-        String currentTime = convertToTimeZoneFormat(currentDate, timezone);
-
-        response.getWriter().println("<html><body>");
-        response.getWriter().println("<h1>Поточний час (" + timezone.getID() + ")</h1>");
-        response.getWriter().println("<p>" + currentTime + "</p>");
-        response.getWriter().println("</body></html>");
-
     }
-    
+
     private void createTimezoneCookie(HttpServletRequest request, HttpServletResponse response, String timezone) {
         Cookie timezoneCookie = new Cookie("lastTimezone", timezone);
-        timezoneCookie.setPath(request.getContextPath());
         response.addCookie(timezoneCookie);
     }
     private boolean validateTimezone(String timezone) {
         return TimeZone.getTimeZone(timezone) != null;
     }
     void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String timezone = request.getParameter("timezone");
+        String timezone = URLEncoder.encode(request.getParameter("timezone"), StandardCharsets.UTF_8);
 
         if (timezone != null && !timezone.isEmpty()) {
             if (validateTimezone(timezone)) {
@@ -69,15 +63,14 @@ public class TimeServlet extends HttpServlet {
             }
         }
 
-        String lastTimezone = getLastTimezoneFromCookie(request);
+        String lastTimezone = getLastTimezoneFromCookie(request).orElse(timezone);
         if (lastTimezone != null) {
             String currentTimeFormatted = getCurrentTimeFormatted(lastTimezone);
 
             WebContext context = new WebContext(request, response, getServletContext(), request.getLocale());
             context.setVariable("timezone", lastTimezone);
             context.setVariable("currentTime", currentTimeFormatted);
-
-            templateEngine.process("time_template", context, response.getWriter());
+            templateEngine.process("time", context, response.getWriter());
         }
     }
     private String getCurrentTimeFormatted(String timezone) {
@@ -88,16 +81,16 @@ public class TimeServlet extends HttpServlet {
         sdf.setTimeZone(selectedTimeZone);
         return sdf.format(currentTime);
     }
-    private String getLastTimezoneFromCookie(HttpServletRequest request) {
+    private Optional<String> getLastTimezoneFromCookie(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
                 if ("lastTimezone".equals(cookie.getName())) {
-                    return cookie.getValue();
+                    return Optional.of(cookie.getValue());
                 }
             }
         }
-        return null;
+        return Optional.empty();
     }
 
     private TimeZone parseTimeZone(String timezoneParam) {
