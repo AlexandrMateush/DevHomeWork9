@@ -3,7 +3,6 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.WebContext;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.FileTemplateResolver;
-import org.thymeleaf.templateresolver.ServletContextTemplateResolver;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -12,7 +11,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Optional;
 import java.util.TimeZone;
-import javax.servlet.Filter;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.Cookie;
@@ -52,7 +50,7 @@ public class TimeServlet extends HttpServlet {
         return TimeZone.getTimeZone(timezone) != null;
     }
     void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String timezone = URLEncoder.encode(request.getParameter("timezone"), StandardCharsets.UTF_8);
+        String timezone = request.getParameter("timezone");
 
         if (timezone != null && !timezone.isEmpty()) {
             if (validateTimezone(timezone)) {
