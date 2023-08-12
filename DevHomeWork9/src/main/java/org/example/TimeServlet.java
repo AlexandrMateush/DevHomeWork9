@@ -44,6 +44,7 @@ public class TimeServlet extends HttpServlet {
 
     private void createTimezoneCookie(HttpServletRequest request, HttpServletResponse response, String timezone) {
         Cookie timezoneCookie = new Cookie("lastTimezone", timezone);
+        timezoneCookie.setPath(request.getContextPath());
         response.addCookie(timezoneCookie);
     }
     private boolean validateTimezone(String timezone) {
