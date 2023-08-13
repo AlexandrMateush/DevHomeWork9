@@ -28,6 +28,7 @@ public class TimeServlet extends HttpServlet {
         FileTemplateResolver templateResolver = new FileTemplateResolver();
         templateResolver.setTemplateMode(TemplateMode.HTML);
         templateResolver.setPrefix(Objects.requireNonNull(getClass().getClassLoader().getResource("templates")).getPath());
+        System.out.println("ce problema =========="+getClass().getClassLoader().getResource("templates").getPath());
         templateResolver.setSuffix(".html");
         templateResolver.setCharacterEncoding(StandardCharsets.UTF_8.name());
         templateResolver.setOrder(templateEngine.getTemplateResolvers().size());
@@ -51,7 +52,7 @@ public class TimeServlet extends HttpServlet {
     private boolean validateTimezone(String timezone) {
         return TimeZone.getTimeZone(timezone) != null;
     }
-    private void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String timezoneParam = request.getParameter("timezone");
         String lastTimezone = getLastTimezoneFromCookie(request).orElse(timezoneParam);
 

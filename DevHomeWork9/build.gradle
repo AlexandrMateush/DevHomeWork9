@@ -26,6 +26,11 @@ dependencies {
     testImplementation 'ch.qos.logback:logback-classic:1.2.6'
 }
 
+war {
+    webAppDirName = 'src/main/webapp' // Шлях до каталогу з веб-ресурсами
+
+}
+
 test {
     useJUnitPlatform()
 }
