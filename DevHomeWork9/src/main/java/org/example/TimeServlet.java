@@ -31,6 +31,7 @@ public class TimeServlet extends HttpServlet {
         templateResolver.setCharacterEncoding(StandardCharsets.UTF_8.name());
         templateEngine.setTemplateResolver(templateResolver);
     }
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         processRequest(request, response);
@@ -46,9 +47,11 @@ public class TimeServlet extends HttpServlet {
         timezoneCookie.setPath("/");
         response.addCookie(timezoneCookie);
     }
+
     private boolean validateTimezone(String timezone) {
         return TimeZone.getTimeZone(timezone) != null;
     }
+
     private void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String timezoneParam = request.getParameter("timezone");
         String lastTimezone = getLastTimezoneFromCookie(request).orElse(timezoneParam);
@@ -65,8 +68,9 @@ public class TimeServlet extends HttpServlet {
             usedTimezone = "UTC";
         }
 
-
-        currentTimeFormatted = getCurrentTimeFormatted(usedTimezone);
+        TimeZone selectedTimeZone = parseTimeZone(usedTimezone);
+        Date currentTime = new Date();
+        currentTimeFormatted = convertToTimeZoneFormat(currentTime, selectedTimeZone);
 
         WebContext context = new WebContext(request, response, getServletContext(), request.getLocale());
         context.setVariable("timezone", usedTimezone);
@@ -74,34 +78,16 @@ public class TimeServlet extends HttpServlet {
 
         templateEngine.process("times", context, response.getWriter());
     }
-    private String getCurrentTimeFormatted(String timezone) {
-        TimeZone selectedTimeZone = TimeZone.getTimeZone(timezone);
-        Date currentTime = new Date();
-
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
-        sdf.setTimeZone(selectedTimeZone);
-        return sdf.format(currentTime);
-    }
-    private Optional<String> getLastTimezoneFromCookie(HttpServletRequest request) {
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if ("lastTimezone".equals(cookie.getName())) {
-                    return Optional.of(cookie.getValue());
-                }
-            }
-        }
-        return Optional.empty();
-    }
 
     private TimeZone parseTimeZone(String timezoneParam) {
         if (timezoneParam != null && timezoneParam.matches("^UTC[+-]\\d{1,2}$")) {
             try {
                 int totalOffset = Integer.parseInt(timezoneParam.substring(3));
                 if (totalOffset >= -12 * 60 && totalOffset <= 14 * 60) {
-                    if( totalOffset < 0 && totalOffset > -13){
+                    if (totalOffset < 0 && totalOffset > -13) {
                         return TimeZone.getTimeZone("GMT" + totalOffset);
-                    }return TimeZone.getTimeZone("GMT" + (totalOffset > 0 && totalOffset < 15 ? "+" : " ") + totalOffset);
+                    }
+                    return TimeZone.getTimeZone("GMT" + (totalOffset > 0 && totalOffset < 15 ? "+" : " ") + totalOffset);
                 }
             } catch (NumberFormatException e) {
             }
@@ -117,5 +103,18 @@ public class TimeServlet extends HttpServlet {
         int offsetHours = offsetInMillis / (60 * 60 * 1000);
         return formattedDate.replace("GMT", "UTC") ;
     }
+
+    private Optional<String> getLastTimezoneFromCookie(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("lastTimezone".equals(cookie.getName())) {
+                    return Optional.of(cookie.getValue());
+                }
+            }
+        }
+        return Optional.empty();
+    }
 }
+
 
