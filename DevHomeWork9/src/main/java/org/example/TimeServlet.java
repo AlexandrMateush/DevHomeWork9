@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.TimeZone;
 import javax.servlet.ServletException;
@@ -27,10 +26,9 @@ public class TimeServlet extends HttpServlet {
         templateEngine = new TemplateEngine();
         FileTemplateResolver templateResolver = new FileTemplateResolver();
         templateResolver.setTemplateMode(TemplateMode.HTML);
-        templateResolver.setPrefix(Objects.requireNonNull(getClass().getClassLoader().getResource("templates")).getPath());
+        templateResolver.setPrefix(getClass().getClassLoader().getResource("templates").getPath());
         templateResolver.setSuffix(".html");
         templateResolver.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        templateResolver.setOrder(templateEngine.getTemplateResolvers().size());
         templateEngine.setTemplateResolver(templateResolver);
     }
     @Override
@@ -51,7 +49,7 @@ public class TimeServlet extends HttpServlet {
     private boolean validateTimezone(String timezone) {
         return TimeZone.getTimeZone(timezone) != null;
     }
-    void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    private void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String timezoneParam = request.getParameter("timezone");
         String lastTimezone = getLastTimezoneFromCookie(request).orElse(timezoneParam);
 
@@ -67,12 +65,14 @@ public class TimeServlet extends HttpServlet {
             usedTimezone = "UTC";
         }
 
+
         currentTimeFormatted = getCurrentTimeFormatted(usedTimezone);
+
         WebContext context = new WebContext(request, response, getServletContext(), request.getLocale());
         context.setVariable("timezone", usedTimezone);
         context.setVariable("currentTime", currentTimeFormatted);
 
-        templateEngine.process("time", context, response.getWriter());
+        templateEngine.process("times", context, response.getWriter());
     }
     private String getCurrentTimeFormatted(String timezone) {
         TimeZone selectedTimeZone = TimeZone.getTimeZone(timezone);
@@ -118,3 +118,4 @@ public class TimeServlet extends HttpServlet {
         return formattedDate.replace("GMT", "UTC") ;
     }
 }
+
